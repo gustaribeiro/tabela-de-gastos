@@ -11,7 +11,7 @@
   
     
   
-  print_r($_POST);
+  //print_r($_POST);
 
   if(isset($_POST['submitButtonFinance'])){
     $category = $_POST['category'];
@@ -20,7 +20,7 @@
     $value = $_POST['value'];
     $userId = 1;
     $description = $_POST['description'] ?? null;
-
+    var_dump($_POST);
 
     $sql="INSERT INTO finances(value, description, userId, categoryId, monthId, sub_categoryId)
           VALUES('$value', '$description', $userId, '$category', '$monthId', '$subCategory')";
@@ -79,7 +79,7 @@
 
     <!--FORMULÁRIO DE GASTOS-->
     <div id="formulario" class="container col-sm-4 red">
-      <form action="<?php echo $_SERVER['PHP_SELF'];?>" method="POST">
+      <form id="formularioDeCadastro" action="<?php echo $_SERVER['PHP_SELF'];?>" method="POST">
         <label for="area">Selecione a Categoria:</label>
         <select id="category" name="category" class="form-select" aria-label="Default select example">
           <?php
@@ -319,7 +319,13 @@
 <script>
     $(document).ready(function() {
 
+      $('#formularioDeCadastro').submit( function(event) {
+        event.preventDefault();
+        $(this).submit();
+      });
+
         $('.editBtn').on('click', function() {
+          event.preventDefault();
             const id = $(this).data('financeid');
             $('#financeId').val(id);
             $.ajax({
@@ -378,12 +384,13 @@
                 },
                 dataType: 'json',
                 success: function(data) {
+                  $('#editModal').reset();
                     // Atualiza o valor na tabela
                     //location.reload();
 
                 // Fecha o modal e limpa os campos
                 $('#editModal').modal('hide');
-                $('#editModal').find('form')[0].reset();
+                $('#editModal').find('form')[0].reset();  
                 },
                 error: function(error) {
                     console.log(error);
