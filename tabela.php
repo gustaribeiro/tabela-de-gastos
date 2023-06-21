@@ -9,30 +9,8 @@
   $sql = 'SELECT * FROM categories';
   $result = $conn->query($sql);
   
-    
-  
-  //print_r($_POST);
 
-  if(isset($_POST['submitButtonFinance'])){
-    $category = $_POST['category'];
-    $subCategory= $_POST['subCategory'];
-    $monthId = $_POST['month'];
-    $value = $_POST['value'];
-    $userId = 1;
-    $description = $_POST['description'] ?? null;
-    var_dump($_POST);
-
-    $sql="INSERT INTO finances(value, description, userId, categoryId, monthId, sub_categoryId)
-          VALUES('$value', '$description', $userId, '$category', '$monthId', '$subCategory')";
-
- /*    var_dump($_POST);
-    die; */
-    if($conn->query($sql)===true){
-      //echo"ok ";
-    }else{
-      echo"error {$sql}";
-    }
-  }
+  // REMOVIDO PARTE QUE SALVAVA
 
   
 ?>
@@ -44,12 +22,15 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.3/jquery.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.contextMenu.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.ui.position.js"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/js/bootstrap.bundle.min.js" integrity="sha384-MrcW6ZMFYlzcLA8Nl+NtUVF0sA7MsXsP1UyJoMp4YLEuNSfAP+JcXn/tWtIaxVXM" crossorigin="anonymous"></script>  
     <link rel="stylesheet" type="text/css" href="https://cdn.datatables.net/1.13.2/css/jquery.dataTables.css">
     <script type="text/javascript" charset="utf8" src="https://cdn.datatables.net/1.13.2/js/jquery.dataTables.js"></script>
     <title>Tabela de Gastos</title>
     <link rel="stylesheet" href="./css/tabela.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/jquery-contextmenu/2.7.1/jquery.contextMenu.min.css">
 
 </head>
 <body>
@@ -79,7 +60,7 @@
 
     <!--FORMULÁRIO DE GASTOS-->
     <div id="formulario" class="container col-sm-4 red">
-      <form id="formularioDeCadastro" action="<?php echo $_SERVER['PHP_SELF'];?>" method="POST">
+      <form id="formularioDeCadastro" action="" method="POST">
         <label for="area">Selecione a Categoria:</label>
         <select id="category" name="category" class="form-select" aria-label="Default select example">
           <?php
@@ -133,6 +114,9 @@
         <br>
         <input type="hidden" name="userId" value="<?=$_SESSION['userId'] ?? 1?>">
 
+        <input type="hidden" name="insertFinance" value="insertFinance">
+
+
         <input type="submit" id="submitButtonFinance" name="submitButtonFinance" class="btn btn-outline-dark mx-auto d-flex justify-content-center" value="Enviar">
         
       </form>
@@ -172,7 +156,7 @@
                   $categories[$category_subcategory]['financeId'] = $row['financeId'];
                   $categories[$category_subcategory]['category'] = $row['category'];
                   $categories[$category_subcategory]['subcategoryName'] = $row['subcategoryName'];
-                  $categories[$category_subcategory]['values'][$row['monthId']] = $row['value'];
+                  $categories[$category_subcategory]['values'][$row['monthId']]['financeId'][$row['financeId']] = $row['value'];
               }
           }
 
@@ -185,29 +169,29 @@
               echo "<th>".$monthNames[$monthId] . "</th>";
           }
           echo "<th>Total Anual</th>";
-          echo "<th>Ações</th>";
           echo "</tr>";
           echo "</thead>";
 
           echo "<tbody>";
           foreach ($categories as $category_subcategory => $category) {
+            //var_dump($category);
+            //die;
               echo "<tr id='row{$category['financeId']}' data-id='{$category['financeId']}' class='table-row'>";
               //echo "<tr id = 'row'{$category['financeId']}>";
               echo "<td>" . $category_subcategory . "</td>";
               $totalCategory = 0;
               foreach ($months as $monthId => $month) {
-                  if (isset($category['values'][$monthId])) {
-                      echo "<td> R$ " . number_format($category['values'][$monthId], 2, ",", ".") . "</td>";
-                      $totalCategory += $category['values'][$monthId];
+                //var_dump(array_keys($category['values']));
+                if (isset($category['values'][$monthId])) {
+                  $financeId = array_keys($category['values'][$monthId]['financeId'])[0];
+                  $value = array_values($category['values'][$monthId]['financeId'])[0];
+                  echo "<td class='context-menu-one' data-financeId='{$financeId}'> R$ " . number_format($value, 2, ",", ".") . "</td>";
+                      $totalCategory += $value;
                   } else {
                       echo "<td></td>";
                   }
               }
               echo "<td class='text-end'> R$ " . number_format($totalCategory, 2, ",", ".") . "</td>";
-              echo "<td>
-              <button class='btn btn-warning btn-sm editBtn' data-bs-toggle='modal' data-bs-target='#editModal' data-financeid='{$category['financeId']}'>Editar</button>
-              <button class='btn btn-danger btn-sm' data-bs-toggle='modal' data-bs-target='#deleteModal' data-financeid='{$category['financeId']}'>Excluir</button>
-              </td>";
               echo "</tr>";
         
 
@@ -221,7 +205,8 @@
               $totalMonth = 0;
               foreach ($categories as $category_subcategory => $category) {
                   if (isset($category['values'][$i])) {
-                      $totalMonth += $category['values'][$i];
+                      //var_dump($category['values'][$i]['financeId']);
+                      $totalMonth += array_values($category['values'][$i]['financeId'])[0];
                   }
               }
               echo "<td class='text-end'> R$ " . number_format($totalMonth, 2, ",", ".") . "</td>";
@@ -318,40 +303,28 @@
 
 <script>
     $(document).ready(function() {
-
+      
       $('#formularioDeCadastro').submit( function(event) {
         event.preventDefault();
-        $(this).submit();
+        const formData = $(this).serialize();
+        console.log("teste");
+        $.ajax({
+            type: 'POST',
+            url: 'post_form.php',
+            data: formData,
+            dataType: 'json',
+            success: function(data) {
+              console.log("teste");
+                setInterval('location.reload()', 100);
+            },
+            error: function(error) {
+
+                console.log('teste2');
+            }
+        });
       });
 
-        $('.editBtn').on('click', function() {
-          event.preventDefault();
-            const id = $(this).data('financeid');
-            $('#financeId').val(id);
-            $.ajax({
-                type: 'POST',
-                url: 'getRecord.php',
-                data: {
-                    'id': id
-                },
-                dataType: 'json',
-                success: function(data) {
-                    $('#editModalLabel').html('Editar Registro Financeiro #' + data.id);
-                    $('#editModal').find('[name="category"]').val(data.categoryId);
-                    $('#editModal').find('[name="subCategory"]').val(data.sub_categoryId);
-                    $('#editModal').find('[name="month"]').val(data.monthId);
-                    $('#editModal').find('[name="value"]').val(data.value);
-
-                   /*  $('#editModal').find('#categoryId').val(data.categoryId);
-                    $('#editModal').find('#subCategoryId').val(data.subCategoryId);
-                    $('#editModal').find('#monthId').val(data.monthId);
-                    $('#editModal').find('#value').val(data.value); */
-                },
-                error: function() {
-                    alert('Erro ao obter dados do registro financeiro.');
-                }
-            });
-        });
+       
 
 
         // seleciona o botão de "Salvar" do modal
@@ -384,21 +357,91 @@
                 },
                 dataType: 'json',
                 success: function(data) {
-                  $('#editModal').reset();
+                  console.log('teste2');
+                  //$('#editModal').reset();
                     // Atualiza o valor na tabela
-                    //location.reload();
-
-                // Fecha o modal e limpa os campos
-                $('#editModal').modal('hide');
-                $('#editModal').find('form')[0].reset();  
+                    
+                    // Fecha o modal e limpa os campos
+                    $('#editModal').modal('hide');
+                    $('#editModal').find('form')[0].reset();  
+                    location.reload();
                 },
                 error: function(error) {
-                    console.log(error);
+                    console.log('teste3');
                     //alert('Erro ao atualizar registro financeiro');
                 }
+                
             });
         });
-    });
+          $.contextMenu({
+              selector: '.context-menu-one', 
+              callback: function(key, options) {
+/*                   var m = "clicked: " + key;
+                  window.console && console.log(m) || alert(m);  */
+
+                  if(key == "edit"){
+                    //e.preventDefault();
+                      const id = $(this).data('financeid');
+                      $('#financeId').val(id);
+                      $.ajax({
+                          type: 'POST',
+                          url: 'getRecord.php',
+                          data: {
+                              'id': id
+                          },
+                          dataType: 'json',
+                          success: function(data) {
+                              $('#editModalLabel').html('Editar Registro Financeiro #' + data.id);
+                              $('#editModal').find('[name="category"]').val(data.categoryId);
+                              $('#editModal').find('[name="subCategory"]').val(data.sub_categoryId);
+                              $('#editModal').find('[name="month"]').val(data.monthId);
+                              $('#editModal').find('[name="value"]').val(data.value);
+                              $('#editModal').modal('show');
+                              
+
+                          },
+                          error: function() {
+                              alert('Erro ao obter dados do registro financeiro.');
+                          }
+                      });
+                } 
+                if(key == "delete"){
+                  const id = $(this).data('financeid');
+                      $('#financeId').val(id);
+                      $.ajax({
+                          type: 'POST',
+                          url: 'deleteRecord.php',
+                          data: {
+                              'financeId': id
+                          },
+                          dataType: 'json',
+                          success: function(data) {
+                              location.reload();
+                          },
+                          error: function() {
+                              alert('Erro ao obter dados do registro financeiro.');
+                          }
+                      });
+                }
+              },
+
+
+              items: {
+                  "edit": {name: "Edit", icon: "edit"},
+                  "delete": {name: "Delete", icon: "delete"},
+                  "quit": {name: "Quit", icon: function(){
+                      return 'context-menu-icon context-menu-icon-quit';
+                  }}
+              }
+          });
+
+          $('.context-menu-one').on('click', function(e){
+              console.log('teste');
+              
+              })    
+          });
+
+
 </script>
       
 
