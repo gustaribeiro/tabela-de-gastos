@@ -10,14 +10,14 @@
         $monthId = $_POST['monthId'];
         $value = $_POST['value'];
 
-        $sql = "UPDATE finances SET value='$value', monthId='$monthId' WHERE financeId='$financeId' and categoryId='$categoryId' and sub_categoryId='$subCategoryId'";
-        var_dump($sql);
+        $sql = "UPDATE finances SET value='$value'  WHERE financeId='$financeId'";
+        //var_dump($sql);
         //die;
 
 
         if ($conn->query($sql) === TRUE) {
-          
-            echo 'testando';
+            //ao trabalhar com ajax sempre usar o json_encode
+            echo json_encode(['success'=>true]);
             exit;            
         } else {
             echo 'Erro ao atualizar registro financeiro: ' . $conn->error;
